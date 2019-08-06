@@ -57,11 +57,11 @@ def build_actev19_linear_combination_kernel(filters, components, weights, initia
                 return (ok and f_ok, cache)
             else:
                 return (ok, cache)
-        ok, cache = reduce(_filter_reducer, filters, (True, {}))
+        ok, cache = functools.reduce(_filter_reducer, filters, (True, {}))
         if ok:
             #print "OK"
             #print cache
-            component_values = reduce(merge_dicts, [ cf(r_i, s_i, cache) for cf in components ], {})
+            component_values = functools.reduce(merge_dicts, [ cf(r_i, s_i, cache) for cf in components ], {})
             
             def _r(init, key_weight):
                 key, weight = key_weight
@@ -71,7 +71,7 @@ def build_actev19_linear_combination_kernel(filters, components, weights, initia
                 #print component_values.get(key,0)
                 return init + weight * component_values.get(key, 0)
         
-            sim = reduce(_r, weights.iteritems(), initial_similarity)
+            sim = functools.reduce(_r, weights.items(), initial_similarity)
             #print "SIM: %s" %str(sim)
             return (sim, component_values)
         else:
@@ -102,11 +102,11 @@ def build_linear_combination_kernel(filters, components, weights, initial_simila
                 return (ok and f_ok, cache)
             else:
                 return (ok, cache)
-        ok, cache = reduce(_filter_reducer, filters, (True, {}))
+        ok, cache = functools.reduce(_filter_reducer, filters, (True, {}))
         if ok:
             #print "OK"
             #print cache
-            component_values = reduce(merge_dicts, [ cf(r_i, s_i, cache) for cf in components ], {})
+            component_values = functools.reduce(merge_dicts, [ cf(r_i, s_i, cache) for cf in components ], {})
 
             def _r(init, key_weight):
                 key, weight = key_weight
@@ -116,7 +116,7 @@ def build_linear_combination_kernel(filters, components, weights, initial_simila
                     #print component_values.get(key,0)
                 return init + weight * component_values.get(key, 0)
 
-            sim = reduce(_r, weights.iteritems(), initial_similarity)
+            sim = functools.reduce(_r, weights.items(), initial_similarity)
             #print "SIM: %s" %str(sim)
             return (sim, component_values)
         else:

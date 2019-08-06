@@ -30,6 +30,8 @@
 # bundled with the code in compliance with the conditions of those
 # licenses.
 
+import functools
+
 # Optional default_groups ensures the inclusion of the
 # specified groups in the output dictionary
 def group_by_func(key_func, items, map_func = None, default_groups = None):
@@ -37,7 +39,7 @@ def group_by_func(key_func, items, map_func = None, default_groups = None):
         h.setdefault(key_func(x), []).append(x if map_func == None else map_func(x))
         return h
 
-    grouped = reduce(_r, items, {})
+    grouped = functools.reduce(_r, items, {})
     if default_groups is None:
         return grouped
     else:
@@ -51,7 +53,7 @@ def dict_to_records(d, value_map = None):
 
         return init
 
-    return reduce(_r, d.iteritems(), [])
+    return functools.reduce(_r, d.iteritems(), [])
 
 def merge_dicts(a, b, conflict_func = None):
     def _r(init, k):
@@ -65,7 +67,7 @@ def merge_dicts(a, b, conflict_func = None):
 
         return init
 
-    return reduce(_r, a.viewkeys() | b.viewkeys(), {})
+    return functools.reduce(_r, a.keys() | b.keys(), {})
 
 def identity(x):
     return x

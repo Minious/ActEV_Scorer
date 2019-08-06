@@ -32,6 +32,7 @@
 
 from operator import add, sub
 from itertools import repeat
+import functools
 
 class SparseSignal(dict):
     def __init__(self, *args, **kwargs):
@@ -76,7 +77,7 @@ class SparseSignal(dict):
             #print lambda a, b: a.join(b, init, SparseSignal())
             return lambda a, b: a.join(b, init, SparseSignal())
 
-        return reduce(_r, repeat(None, n - 1), lambda a, b: a.join(b, op, default))(self, other)
+        return functools.reduce(_r, repeat(None, n - 1), lambda a, b: a.join(b, op, default))(self, other)
 
     def normalize(self):
         return self + {}
@@ -127,7 +128,7 @@ class SparseSignal(dict):
             
             
     def generate_collar(self, size):
-        return reduce(lambda init, key: init | SparseSignal({key - size: 1, key + size: 0}),
+        return functools.reduce(lambda init, key: init | SparseSignal({key - size: 1, key + size: 0}),
                       self.normalize().keys(),
                       SparseSignal()).normalize()
 

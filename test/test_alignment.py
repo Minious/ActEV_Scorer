@@ -166,9 +166,9 @@ class TestPerformAlignment(TestAlignment):
         obs_corr, obs_miss, obs_fa = observed
         exp_corr, exp_miss, exp_fa = expected
 
-        self.assertItemsEqual(obs_corr, exp_corr)
-        self.assertItemsEqual(obs_miss, exp_miss)
-        self.assertItemsEqual(obs_fa, exp_fa)
+        self.assertCountEqual(obs_corr, exp_corr)
+        self.assertCountEqual(obs_miss, exp_miss)
+        self.assertCountEqual(obs_fa, exp_fa)
 
     def test_alignment(self):
         self.assertAlignment(perform_alignment(self.ref_instances_1, self.sys_instances_1, self.kernel_multi), (self.corr_1, self.miss_1, self.fa_1))

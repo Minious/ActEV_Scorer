@@ -35,6 +35,7 @@ from activity_instance import *
 from sparse_signal import SparseSignal as S
 from helpers import *
 from alignment import *
+import functools
 
 from operator import add
 
@@ -119,7 +120,7 @@ def _object_signals_to_lookup(temporal_signal, local_objects):
         init.extend(selected_o)
         return init
 
-    return group_by_func(lambda x: x[0], reduce(_r, local_objects, []), lambda x: x[1])
+    return group_by_func(lambda x: x[0], functools.reduce(_r, local_objects, []), lambda x: x[1])
 
 # Using a factory function here so we can configure the object kernel
 # at the protocol level.  Not sure if this is the best place to pass
@@ -146,7 +147,7 @@ def build_object_congruence(obj_kernel_builder, ref_filter, sys_filter, object_t
 
             return (ok and still_ok, d)
 
-        was_cached, components = reduce(_r_out_dict, [ "object_congruence", "minMODE", "MODE_records", "alignment_records", "det_points", "ref_filter_localization" ] + [ "object-p_miss@{}rfa".format(target_rfa) for target_rfa in target_rfas ], (True, {}))
+        was_cached, components = functools.reduce(_r_out_dict, [ "object_congruence", "minMODE", "MODE_records", "alignment_records", "det_points", "ref_filter_localization" ] + [ "object-p_miss@{}rfa".format(target_rfa) for target_rfa in target_rfas ], (True, {}))
 
         if was_cached:
             return components
@@ -185,7 +186,7 @@ def _object_congruence(r, s, obj_kernel_builder, ref_filter, sys_filter, object_
 
         ref_filter_localization[k] = ref_filter(r, s)
 
-        for frame in sos_lookup.viewkeys() | ros_lookup.viewkeys():
+        for frame in sos_lookup.keys() | ros_lookup.keys():
             sys = sos_lookup.get(frame, [])
             ref = ros_lookup.get(frame, [])
 
@@ -216,7 +217,7 @@ def _object_congruence(r, s, obj_kernel_builder, ref_filter, sys_filter, object_
 
     # Filter out None mode scores (in the case of zero reference
     # objects)
-    mode_scores = filter(lambda r: r[1] is not None, flatten_sweeper_records(sweep_recs, [ "mode" ]))
+    mode_scores = list(filter(lambda r: r[1] is not None, flatten_sweeper_records(sweep_recs, [ "mode" ])))
 
     det_points = flatten_sweeper_records(sweep_recs, [ "rfa", "p_miss" ])
 
@@ -257,7 +258,7 @@ def build_object_tracking_congruence(obj_kernel_builder, ref_filter, sys_filter,
                 
             return (ok and still_ok, d)
 
-        was_cached, components = reduce(_r_out_dict, [ "object_congruence", "minMODE", "MODE_records", "object_tracking_congruence", "minMOTE", "MOTE_records", "alignment_records", "det_points", "ref_filter_localization" ] + [ "object-p_miss@{}rfa".format(target_rfa) for target_rfa in target_rfas ], (True, {}))
+        was_cached, components = functools.reduce(_r_out_dict, [ "object_congruence", "minMODE", "MODE_records", "object_tracking_congruence", "minMOTE", "MOTE_records", "alignment_records", "det_points", "ref_filter_localization" ] + [ "object-p_miss@{}rfa".format(target_rfa) for target_rfa in target_rfas ], (True, {}))
         
         if was_cached:
             return components
@@ -292,7 +293,7 @@ def _object_tracking_congruence(r, s, obj_kernel_builder, ref_filter, sys_filter
         ref_filter_localization[k] = ref_filter(r, s)
         FirstRun=True
         obj_align={}
-        for frame in sos_lookup.viewkeys() | ros_lookup.viewkeys():
+        for frame in sos_lookup.keys() | ros_lookup.keys():
             sys = sos_lookup.get(frame, [])
             ref = ros_lookup.get(frame, [])
             
@@ -332,8 +333,8 @@ def _object_tracking_congruence(r, s, obj_kernel_builder, ref_filter, sys_filter
     
     # Filter out None mode scores (in the case of zero reference
     # objects)
-    mode_scores = filter(lambda r: r[1] is not None, flatten_sweeper_records(sweep_recs, [ "mode" ]))
-    mote_scores = filter(lambda r: r[1] is not None, flatten_sweeper_records(sweep_recs, [ "mote" ]))
+    mode_scores = list(filter(lambda r: r[1] is not None, flatten_sweeper_records(sweep_recs, [ "mode" ])))
+    mote_scores = list(filter(lambda r: r[1] is not None, flatten_sweeper_records(sweep_recs, [ "mote" ])))
     #   print "mote_scores"
     #   print mote_scores
     det_points = flatten_sweeper_records(sweep_recs, [ "rfa", "p_miss" ])

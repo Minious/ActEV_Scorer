@@ -32,6 +32,7 @@
 
 import sys
 import os
+import functools
 
 lib_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../")
 sys.path.append(lib_path)
@@ -54,7 +55,7 @@ class Default(object):
         self.scoring_parameters = scoring_parameters
         self.file_index = file_index
         self.activity_index = activity_index
-        self.default_activity_groups = [ (k,) for k in self.activity_index.viewkeys() ]
+        self.default_activity_groups = [ (k,) for k in self.activity_index.keys() ]
 
     # assumes syss, and refs are simple lists of activities
     def default_cohort_gen(self, refs, syss):
@@ -82,7 +83,7 @@ class Default(object):
         sys_by_act = group_by_func(activity_getter, system_activities)
 
         alignment_recs = []
-        for activity, activity_properties in self.activity_index.iteritems():
+        for activity, activity_properties in self.activity_index.items():
             refs = ref_by_act.get(activity, [])
             syss = sys_by_act.get(activity, [])
 
@@ -103,7 +104,7 @@ class Default(object):
         return alignment_recs
 
     def compute_measures(self, record, measures):
-        return reduce(merge_dicts, [ m(record) for m in measures ], {})
+        return functools.reduce(merge_dicts, [ m(record) for m in measures ], {})
 
     # Optional default_factorizations ensures the inclusion of the
     # specified factorizations in the output records, but if not
@@ -113,24 +114,24 @@ class Default(object):
         def _r(init, item):
             factorization, recs = item
 
-            for mv in self.compute_measures(recs, measures).iteritems():
+            for mv in self.compute_measures(recs, measures).items():
                 init.append(factorization + mv)
 
             return init
 
-        return reduce(_r, group_by_func(factorization_func, records, default_groups = default_factorizations).iteritems(), [])
+        return functools.reduce(_r, group_by_func(factorization_func, records, default_groups = default_factorizations).items(), [])
 
     def compute_atomic_measures(self, records, rec_map_func, measures = None):
         if measures is None:
             measures = self.default_pair_measures()
 
         def _r(init, rec):
-            for mv in self.compute_measures(rec, measures).iteritems():
+            for mv in self.compute_measures(rec, measures).items():
                 init.append(rec_map_func(rec) + mv)
 
             return init
 
-        return reduce(_r, records, [])
+        return functools.reduce(_r, records, [])
 
     # This method assumes that the "metric_name" is the second-to-last
     # element, and that "metric_value" is the last element.  Should
@@ -143,9 +144,9 @@ class Default(object):
             filtered_records = filter(lambda r: r[-2] in selected_measures, records)
 
         if selected_measures is None:
-            return self.compute_aggregate_measures(filtered_records, lambda r: (r[-2],), [ lambda recs: mean_exclude_none(map(lambda r: r[-1], recs)) ])
+            return self.compute_aggregate_measures(filtered_records, lambda r: (r[-2],), [ lambda recs: mean_exclude_none(list(map(lambda r: r[-1], recs))) ])
         else:
-            return self.compute_aggregate_measures(filtered_records, lambda r: (r[-2],), [ lambda recs: mean_exclude_none(map(lambda r: r[-1], recs)) ], [ (m,) for m in selected_measures ])
+            return self.compute_aggregate_measures(filtered_records, lambda r: (r[-2],), [ lambda recs: mean_exclude_none(list(map(lambda r: r[-1], recs))) ], [ (m,) for m in selected_measures ])
 
 
     def build_simple_measure(self, arg_func, name, measure_func):

@@ -9,6 +9,7 @@ sys.path.append(lib_path)
 import unittest
 from operator import add, sub
 from sparse_signal import SparseSignal as S
+import functools 
 
 class TestSparseSignal(unittest.TestCase):
     def setUp(self):
@@ -76,8 +77,8 @@ class TestSparseSignal(unittest.TestCase):
         self.assertEqual(self.s1 + self.s7, S({0: 1, 30: 2, 60: 1, 100: 0}))
 
     def testSignalMultiAdd(self):
-        self.assertEqual(reduce(add, [self.s1, self.s1, self.s1]), S({30: 3, 60: 0}))
-        self.assertEqual(reduce(add, [self.s1, self.s2, self.s3]), S({0: 1, 10: 0, 30: 2, 40: 1, 60: 0}))
+        self.assertEqual(functools.reduce(add, [self.s1, self.s1, self.s1]), S({30: 3, 60: 0}))
+        self.assertEqual(functools.reduce(add, [self.s1, self.s2, self.s3]), S({0: 1, 10: 0, 30: 2, 40: 1, 60: 0}))
 
     def testIntersection(self):
         self.assertEqual(self.s1 & self.se, self.se)

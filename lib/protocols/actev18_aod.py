@@ -32,6 +32,7 @@
 
 import sys
 import os
+import functools
 
 lib_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../")
 sys.path.append(lib_path)
@@ -86,13 +87,13 @@ class ActEV18_AOD(ActEV18_AD):
         simple_temporal_overlap_filter = build_temporal_overlap_filter(self.scoring_parameters["activity.temporal_overlap_delta"])
 
         def _r(init, sys):
-            localization_vals = reduce(add, map(lambda x: x.localization.values(), sys.objects), [])
-            init.extend(reduce(add, map(lambda x: x.values(), localization_vals), []))
+            localization_vals = functools.reduce(add, map(lambda x: list(x.localization.values()), sys.objects), [])
+            init.extend(functools.reduce(add, map(lambda x: list(x.values()), localization_vals), []))
 
             return init
 
         # Have to filter out empty ObjectLocalizationFrames here
-        global_sys_obj_localizations = filter(lambda x: x.presenceConf is not None, reduce(_r, syss, []))
+        global_sys_obj_localizations = list(filter(lambda x: x.presenceConf is not None, functools.reduce(_r, syss, [])))
 
         obj_presenceconf_congruence = build_sed_presenceconf_congruence(global_sys_obj_localizations)
         simple_spatial_overlap_filter = build_simple_spatial_overlap_filter(self.scoring_parameters["object.spatial_overlap_delta"])
@@ -171,18 +172,18 @@ class ActEV18_AOD(ActEV18_AD):
             p, m = init
             factorization, recs = item
 
-            combined_alignment_records = reduce(_concat_align_recs, recs, [])
+            combined_alignment_records = functools.reduce(_concat_align_recs, recs, [])
 
             det_points, measures = self.compute_obj_det_points_and_measures(combined_alignment_records, rfa_denom_func(recs), rfa_targets)
 
             p["-".join(factorization)] = det_points
 
-            for _m, v in measures.iteritems():
+            for _m, v in measures.items():
                 m.append(factorization + ("object-{}".format(_m), v))
 
             return (p, m)
 
-        return reduce(_r, group_by_func(factorization_func, records, default_groups = default_factorizations).iteritems(), ({}, []))
+        return functools.reduce(_r, group_by_func(factorization_func, records, default_groups = default_factorizations).items(), ({}, []))
 
     def compute_results(self, alignment):
         c, m, f = partition_alignment(alignment)
@@ -201,27 +202,27 @@ class ActEV18_AOD(ActEV18_AD):
                     sys_object_type = ar.sys.objectType if ar.sys is not None else None
                     mapped_type = object_type_map.get(ref_object_type if ref_object_type is not None else sys_object_type,
                                                       ref_object_type if ref_object_type is not None else sys_object_type)
-                    return map(str, [activity,
+                    return list(map(str, [activity,
                                      item.ref,
                                      item.sys,
                                      frame,
                                      ref_object_type,
                                      sys_object_type,
                                      object_type_map.get(ref_object_type, ref_object_type) if ref_object_type is not None else None,
-                                     object_type_map.get(sys_object_type, sys_object_type) if sys_object_type is not None else None]) + [ x for x in ar.iter_with_extended_properties(["spatial_intersection-over-union", "presenceconf_congruence"]) ]
+                                     object_type_map.get(sys_object_type, sys_object_type) if sys_object_type is not None else None])) + [ x for x in ar.iter_with_extended_properties(["spatial_intersection-over-union", "presenceconf_congruence"]) ]
 
-                return map(_subm, item.kernel_components.get("alignment_records", []))
+                return list(map(_subm, item.kernel_components.get("alignment_records", [])))
 
-            init.extend(reduce(add, map(_m, filter(lambda r: r.alignment == "CD", recs)), []))
+            init.extend(functools.reduce(add, list(map(_m, filter(lambda r: r.alignment == "CD", recs))), []))
             return init
 
-        object_frame_alignment_records = reduce(_object_frame_alignment_records, group_by_func(lambda rec: rec.activity, alignment).iteritems(), [])
+        object_frame_alignment_records = functools.reduce(_object_frame_alignment_records, group_by_func(lambda rec: rec.activity, alignment).items(), [])
 
         def _obj_pmiss_at_rfa(targ):
             t = "object-p_miss@{}rfa".format(targ)
             return self.build_simple_measure(lambda x: (x.kernel_components.get(t),), t, identity)
 
-        aod_pair_measures = [ self.build_simple_measure(lambda x: (x.kernel_components.get("minMODE"),), "minMODE", identity)] + map(_obj_pmiss_at_rfa, self.scoring_parameters["object.p_miss_at_rfa_targets"])
+        aod_pair_measures = [ self.build_simple_measure(lambda x: (x.kernel_components.get("minMODE"),), "minMODE", identity)] + list(map(_obj_pmiss_at_rfa, self.scoring_parameters["object.p_miss_at_rfa_targets"]))
 
         def _pair_properties_map(rec):
             return (rec.activity, rec.ref.activityID, rec.sys.activityID)
@@ -241,10 +242,10 @@ class ActEV18_AOD(ActEV18_AD):
                 return merge_dicts(init, loc, add)
             #print correct_recs
 #            print [lambda x: x.kernel_components["ref_filter_localization"], correct_recs]
-#            print reduce(_localization_reducer, map(lambda x: x.kernel_components["ref_filter_localization"], correct_recs), {})
-#            print reduce(_localization_reducer, map(lambda x: x.kernel_components["ref_filter_localization"], correct_recs), {}).values()
-#            print [v.area() for v in reduce(_localization_reducer, map(lambda x: x.kernel_components["ref_filter_localization"], correct_recs), {}).values() ]
-            return sum([ v.area() for v in reduce(_localization_reducer, map(lambda x: x.kernel_components["ref_filter_localization"], correct_recs), {}).values() ])
+#            print functools.reduce(_localization_reducer, map(lambda x: x.kernel_components["ref_filter_localization"], correct_recs), {})
+#            print functools.reduce(_localization_reducer, map(lambda x: x.kernel_components["ref_filter_localization"], correct_recs), {}).values()
+#            print [v.area() for v in functools.reduce(_localization_reducer, map(lambda x: x.kernel_components["ref_filter_localization"], correct_recs), {}).values() ]
+            return sum([ v.area() for v in functools.reduce(_localization_reducer, map(lambda x: x.kernel_components["ref_filter_localization"], correct_recs), {}).values() ])
 
         activity_obj_det_points, activity_obj_det_measures = self.compute_aggregate_obj_det_points_and_measures(c, _activity_grouper, _rfa_denom_fn, self.scoring_parameters["object.p_miss_at_rfa_targets"], self.default_activity_groups)
 
@@ -262,7 +263,7 @@ class ActEV18_AOD(ActEV18_AD):
 
             return init
 
-        obj_activity_means = reduce(_pair_metric_means, group_by_func(lambda t: t[0], aod_pair_results, default_groups = self.activity_index.keys()).iteritems(), [])
+        obj_activity_means = functools.reduce(_pair_metric_means, group_by_func(lambda t: t[0], aod_pair_results, default_groups = self.activity_index.keys()).items(), [])
 
         agg_obj_det_points, agg_obj_det_measures = self.compute_aggregate_obj_det_points_and_measures(c, _empty_grouper, _rfa_denom_fn, self.scoring_parameters["object.p_miss_at_rfa_targets"], [ tuple() ])
 

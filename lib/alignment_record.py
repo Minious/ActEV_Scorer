@@ -33,6 +33,7 @@
 from collections import namedtuple, OrderedDict
 
 import json
+import functools
 
 def _alignment_partitioner(init, ar):
     cd, md, fa = init
@@ -48,7 +49,7 @@ def _alignment_partitioner(init, ar):
     return init
 
 def partition_alignment(alignment_records):
-    return reduce(_alignment_partitioner, alignment_records, ([], [], []))
+    return functools.reduce(_alignment_partitioner, alignment_records, ([], [], []))
 
 class AlignmentRecord(namedtuple("ActivityRecord", ["ref",
                                                     "sys",
@@ -102,5 +103,5 @@ class AlignmentRecord(namedtuple("ActivityRecord", ["ref",
         # Want to yield out the JSON serialization of requested kernel
         # components in the order requested.  Ordering is also
         # important for our integration tests.
-        #print json.dumps(reduce(_r, reported_components, OrderedDict())) if self.kernel_components else None
-        yield json.dumps(reduce(_r, reported_components, OrderedDict())) if self.kernel_components else None
+        #print json.dumps(functools.reduce(_r, reported_components, OrderedDict())) if self.kernel_components else None
+        yield json.dumps(functools.reduce(_r, reported_components, OrderedDict())) if self.kernel_components else None
