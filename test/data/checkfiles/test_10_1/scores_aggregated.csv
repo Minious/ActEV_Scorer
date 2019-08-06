@@ -5,13 +5,13 @@ mean-AUDC@0.15rfa|0.15
 mean-AUDC@0.1rfa|0.1
 mean-AUDC@0.2rfa|0.2
 mean-AUDC@1rfa|1.0
-mean-n-mide|0.584151217739
+mean-n-mide|0.58415121774
 mean-n-mide@0.01rfa|None
 mean-n-mide@0.03rfa|None
 mean-n-mide@0.15rfa|None
 mean-n-mide@0.1rfa|None
 mean-n-mide@0.2rfa|None
-mean-n-mide@1rfa|0.584151217739
+mean-n-mide@1rfa|0.58415121774
 mean-n-mide_num_rejected|0.0
 mean-nAUDC@0.01rfa|1.0
 mean-nAUDC@0.03rfa|1.0
@@ -31,5 +31,5 @@ mean-w_p_miss@0.15rfa|1.0
 mean-w_p_miss@0.1rfa|1.0
 mean-w_p_miss@0.2rfa|1.0
 mean-w_p_miss@1rfa|0.875
-n-mide|0.584151217739
+n-mide|0.5841512177390039
 n-mide_num_rejected|0
