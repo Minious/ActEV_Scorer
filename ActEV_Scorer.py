@@ -252,7 +252,32 @@ def score_actev18_aodt(args):
     from actev18_aodt import ActEV18_AODT
 
     score_basic(ActEV18_AODT, args)
-    
+
+def score(protocol_name, system_output, scoring_parameters, file_index, activity_index, output_dir, reference=None, ignore_extraneous_files=False, validation_only=False, disable_plotting=False, dump_object_alignment_records=False, verbose=False):
+    verbosity_threshold = 1 if verbose else 0
+    log = build_logger(verbosity_threshold)
+
+    if protocol_name == "ActEV19_AD":
+        protocol_class = ActEV19_AD
+    if protocol_name == "ActEV19_AD_V2":
+        protocol_class = ActEV19_AD_V2
+    if protocol_name == "ActEV_SDL_V1":
+        protocol_class = ActEV_SDL_V1
+    if protocol_name == "ActEV18_AD":
+        protocol_class = ActEV18_AD
+    if protocol_name == "ActEV18PC_AD":
+        protocol_class = ActEV18PC_AD
+    if protocol_name == "ActEV18_AD_TFA":
+        protocol_class = ActEV18_AD_TFA
+    if protocol_name == "ActEV18_AD_1SECOL":
+        protocol_class = ActEV18_AD_1SECOL
+    if protocol_name == "ActEV18_AOD":
+        protocol_class = ActEV18_AOD
+    if protocol_name == "ActEV18_AODT":
+        protocol_class = ActEV18_AODT
+
+    _score_basic(log, protocol_class, system_output, scoring_parameters, file_index, activity_index, output_dir, reference, "", ignore_extraneous_files, validation_only, disable_plotting, dump_object_alignment_records)
+
 def score_basic(protocol_class, args):
     verbosity_threshold = 1 if args.verbose else 0
     log = build_logger(verbosity_threshold)
@@ -270,46 +295,53 @@ def score_basic(protocol_class, args):
     system_output = load_system_output(log, args.system_output_file)
     activity_index = load_activity_index(log, args.activity_index)
     file_index = load_file_index(log, args.file_index)
-    input_scoring_parameters = load_scoring_parameters(log, args.scoring_parameters_file) if args.scoring_parameters_file else {}
-    protocol = protocol_class(input_scoring_parameters, file_index, activity_index, " ".join(sys.argv))
+    scoring_parameters = load_scoring_parameters(log, args.scoring_parameters_file) if args.scoring_parameters_file else {}
+    if not args.validation_only:
+        reference = load_reference(log, args.reference_file)
+    else:
+        reference = None
+
+    _score_basic(log, protocol_class, system_output, scoring_parameters, file_index, activity_index, args.output_dir, reference, " ".join(sys.argv), args.ignore_extraneous_files, args.validation_only, args.disable_plotting, vars(args).get("dump_object_alignment_records", False))
+
+def _score_basic(log, protocol_class, system_output, scoring_parameters, file_index, activity_index, output_dir, reference=None, command="", ignore_extraneous_files=False, validation_only=False, disable_plotting=False, dump_object_alignment_records=False):
+    protocol = protocol_class(scoring_parameters, file_index, activity_index, command)
     system_output_schema = load_schema_for_protocol(log, protocol)
 
     validate_input(log, system_output, system_output_schema)
-    check_file_index_congruence(log, system_output, file_index, args.ignore_extraneous_files)
+    check_file_index_congruence(log, system_output, file_index, ignore_extraneous_files)
     log(1, "[Info] Validation successful")
 
-    if args.validation_only:
+    if validation_only:
         exit(0)
 
-    system_activities = parse_activities(system_output, file_index, protocol_class.requires_object_localization, args.ignore_extraneous_files)
-    reference = load_reference(log, args.reference_file)
-    reference_activities = parse_activities(reference, file_index, protocol_class.requires_object_localization, args.ignore_extraneous_files)
+    system_activities = parse_activities(system_output, file_index, protocol_class.requires_object_localization, ignore_extraneous_files)
+    reference_activities = parse_activities(reference, file_index, protocol_class.requires_object_localization, ignore_extraneous_files)
 
     log(1, "[Info] Scoring ..")
     alignment = protocol.compute_alignment(system_activities, reference_activities)
     results = protocol.compute_results(alignment)
-    mkdir_p(args.output_dir)
-    log(1, "[Info] Saving results to directory '{}'".format(args.output_dir))
+    mkdir_p(output_dir)
+    log(1, "[Info] Saving results to directory '{}'".format(output_dir))
 
-    write_out_scoring_params(args.output_dir, protocol.scoring_parameters)
+    write_out_scoring_params(output_dir, protocol.scoring_parameters)
 
-    write_records_as_csv("{}/alignment.csv".format(args.output_dir), ["activity", "alignment", "ref", "sys", "sys_presenceconf_score", "kernel_similarity", "kernel_components"], results.get("output_alignment_records", []))
+    write_records_as_csv("{}/alignment.csv".format(output_dir), ["activity", "alignment", "ref", "sys", "sys_presenceconf_score", "kernel_similarity", "kernel_components"], results.get("output_alignment_records", []))
 
-    write_records_as_csv("{}/pair_metrics.csv".format(args.output_dir), ["activity", "ref", "sys", "metric_name", "metric_value"], results.get("pair_metrics", []))
+    write_records_as_csv("{}/pair_metrics.csv".format(output_dir), ["activity", "ref", "sys", "metric_name", "metric_value"], results.get("pair_metrics", []))
 
     # print(type(results.get("scores_by_activity", [])))
     # print(results.get("scores_by_activity", [])[:30])
-    write_records_as_csv("{}/scores_by_activity.csv".format(args.output_dir), ["activity", "metric_name", "metric_value"], results.get("scores_by_activity", []))
+    write_records_as_csv("{}/scores_by_activity.csv".format(output_dir), ["activity", "metric_name", "metric_value"], results.get("scores_by_activity", []))
 
-    write_records_as_csv("{}/scores_aggregated.csv".format(args.output_dir), [ "metric_name", "metric_value" ], results.get("scores_aggregated", []))
+    write_records_as_csv("{}/scores_aggregated.csv".format(output_dir), [ "metric_name", "metric_value" ], results.get("scores_aggregated", []))
 
-    write_records_as_csv("{}/scores_by_activity_and_threshold.csv".format(args.output_dir), [ "activity", "score_threshold", "metric_name", "metric_value" ], results.get("scores_by_activity_and_threshold", []))
+    write_records_as_csv("{}/scores_by_activity_and_threshold.csv".format(output_dir), [ "activity", "score_threshold", "metric_name", "metric_value" ], results.get("scores_by_activity_and_threshold", []))
 
-    if vars(args).get("dump_object_alignment_records", False):
-        write_records_as_csv("{}/object_alignment.csv".format(args.output_dir), ["activity", "ref_activity", "sys_activity", "frame", "ref_object_type", "sys_object_type", "mapped_ref_object_type", "mapped_sys_object_type", "alignment", "ref_object", "sys_object", "sys_presenceconf_score", "kernel_similarity", "kernel_components"], results.get("object_frame_alignment_records", []))
+    if dump_object_alignment_records:
+        write_records_as_csv("{}/object_alignment.csv".format(output_dir), ["activity", "ref_activity", "sys_activity", "frame", "ref_object_type", "sys_object_type", "mapped_ref_object_type", "mapped_sys_object_type", "alignment", "ref_object", "sys_object", "sys_presenceconf_score", "kernel_similarity", "kernel_components"], results.get("object_frame_alignment_records", []))
 
-    if not args.disable_plotting:
-        plot_dets(log, args.output_dir, results.get("det_point_records", {}), results.get("tfa_det_point_records", {}))
+    if not disable_plotting:
+        plot_dets(log, output_dir, results.get("det_point_records", {}), results.get("tfa_det_point_records", {}))
         #plot_dets(log, args.output_dir, results.get("tfa_det_point_records", {}))
 
 if __name__ == '__main__':
